@@ -20,26 +20,7 @@ class Forms
 {	
 	public function processForm( $formType )
 	{
-		if ( method_exists( $this , $formType ) ) {
-			$this->$formType();
-		}
-	}
-	
-	public function loginFrom()
-	{
-		global $ozSession, $zppHttp;
-		$url = $_SERVER[ 'PHP_SELF' ] . '?loginType=' . $_POST[ 'loginType' ];
-		if ( !$ozSession->auth( $_POST[ 'ozuid' ] , $_POST[ 'ozpwd' ] , $_POST[ 'loginType' ] ) ) {
-			if ( $ozSession->errorId == 'ERR0605' ) 
-				$loginError = 'disabled';
-			else 
-				$loginError = 'invalid';
-				
-			$url .= '&loginError=' . $loginError;
-		} else {
-			$url = $_SERVER[ 'PHP_SELF' ];
-		}
-		$zppHttp->redirectClient( $url );
+		
 	}
 }
 

@@ -48,9 +48,10 @@ class Framework extends Core
 	 * Note: This function, if debug level 2, will include a backtrace in the output
 	 *  
 	 */
-	public function printError( $errorid , $errormsg )
+	public function printError( $errorid , $errormsg , $title = null )
 	{
-		$replace[ '<%version%>' ]      = FW_VERSION;
+		//debug_print_backtrace();
+		$replace[ '<%title%>' ]        = ( !empty( $title ) ) ? $title : 'Zippee ' . FW_VERSION;
 		$replace[ '<%message_type%>' ] = 'Error';
 		$replace[ '<%message_code%>' ] = $errorid;
 		$replace[ '<%config_name%>' ]  = $this->config[ 'LG_Config_Name' ];

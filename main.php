@@ -20,6 +20,26 @@ $OZCFG[ 'Database' ][ 'Password' ] = 'Dic20034@';
 /* Do not modify any of settings below */
 $OZPATH[ 'ZippeeConfig' ] = 'Config/Zippee/OZ_local.php'; /* Make the aproproitate changes to Z_local.php for local testing */
 
+/***
+ * Package id 
+***/
+
+$ozCommands[ 'Defaults' ][ 'useradd' ];
+
+$OZCFG[ 'Package' ][1][ 'Name' ] = 'Standard';
+$OZCFG[ 'Package' ][1][ 'Quota' ] = '50000';
+$OZCFG[ 'Package' ][1][ 'SystemGroup' ] = 'clients';
+
+$OZCFG[ 'Package' ][2][ 'Name' ] = 'Contrib';
+$OZCFG[ 'Package' ][2][ 'Quota' ] = '100000';
+$OZCFG[ 'Package' ][2][ 'SystemGroup' ] = 'users';
+
+$OZCFG[ 'Package' ][3][ 'Name' ] = 'Premium';
+$OZCFG[ 'Package' ][3][ 'Quota' ] = '150000';
+$OZCFG[ 'Package' ][3][ 'SystemGroup' ] = 'users';
+
+
+
 /* Absolute path to Zippee FrameWork 
   Note: If left empty, openZ will default to $BASEPATH . 'Library/Zippee/'
 */

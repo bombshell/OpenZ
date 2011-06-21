@@ -75,7 +75,7 @@ if ( !class_exists( 'Framework' ) ) {
 //var_dump( $_SERVER[ 'REMOTE_ADDR' ] );
 /* Load openZ API */
 require 'Class.php';
-	
+
 /* Init API */
 $ozInit = new OZ_Init();
 $ozInit->vars();
@@ -88,4 +88,5 @@ unset( $ozInit );
 $zppFilesystem = new Filesystem();
 $zppHttp       = new Http();
 
-$oz = new Z_Core();
+
+$oz = new OZ_Core();

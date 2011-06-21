@@ -20,29 +20,9 @@ require '../../../main.php';
 
 /*** DO NOT MODIFY THESE LINES ***/
 define( 'OZ_PATH_WEBUI' , OZ_PATH_LIBRARY . path_rewrite( 'UI/WebUI/' ) );
-
-if ( !empty( $_POST[ 'formType' ] ) ) {
-	$ozForms->processForm( $_POST[ 'formType' ] );
-	exit;
-}
-if ( isset( $_GET[ 'media' ] ) ) {
-	require OZ_PATH_WEBUI . 'media.php';
-	exit;
-}
 $ozHtml->head( 'OpenZ Shell User Management System' );
 /*** DO NOT MODIFY THESE LINES ***/
-
-if ( !$ozSession->isAuth() ) {
-	/* Custom check */
-	if ( file_exists( OZ_PATH_BASE . '.shell' ) ) {
-		$_GET[ 'loginType' ] = 'admin';
-	}
-	$body = $ozHtml->getLoginForm( @$_GET[ 'loginType' ] );
-} else {
-	$body = $ozHtml->console();
-}
-
-$ozHtml->body( $body );
+$ozHtml->body();
 /*** DO NOT MODIFY THESE LINES ***/
 $ozHtml->footer();
 /*** DO NOT MODIFY THESE LINES ***/

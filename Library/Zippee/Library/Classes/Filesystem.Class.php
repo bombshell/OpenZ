@@ -71,4 +71,63 @@ class Filesystem
 		}
 		return $array;
 	}
+	
+	/**
+	 * 
+	 * Copy files to new destination 
+	 * @access Public
+	 * @param (string) $src Source File(s)
+	 * @param (string) $dest Destinate
+	 * @return (bool) True on sucess or false on failure
+	 * 
+	 */
+	public function copy( $src , $dest )
+	{	
+		if( is_dir( $src ) )
+        {
+        	/* Check if we can write to distination */
+        	if ( !is_dir( $dest ) ) {
+        		if ( preg_match( '/(c:\\\|\/)/i' , $dest , $match ) ) 
+        			$path = $match[1];
+        		$dirs = preg_split( '/(\\\|\/)/' , $dest );
+        		foreach( $dirs as $dir ) {
+        			if ( !empty( $dir ) )
+        				if ( is_dir( $path . $dir ) )
+        			 		@$path .= $dir . DS;
+        				elseif ( !is_writable( $path ) ) {
+        					return false;
+        				}
+        		}
+        	}
+            @mkdir( $dest );
+            $objects = scandir( $src );
+            if( count( $objects ) > 0 )
+            {
+                foreach( $objects as $file )
+                {
+                    if( $file == "." || $file == ".." )
+                        continue;
+                    //var_dump( $file );
+                    // go on
+                    if( is_dir( $src . DS . $file ) )
+                    {
+                        $this->copy( $src . DS . $file , $dest . DS . $file );
+                    }
+                    else
+                    {
+                        copy( $src . DS . $file , $dest . DS . $file );
+                    }
+                }
+            }
+            return true;
+        }
+        elseif( is_file($path) )
+        {
+            return copy($path, $dest);
+        }
+        else
+        {
+            return false;
+        }
+	}
 }

@@ -44,28 +44,35 @@ class Session extends Session_Core
 			return false;
 		}
 		
+		$error_prefix = 'Error: Login Failed: ';
 		$ozProfile->setType( $authType );
 		$ozProfile->getByName( $ozuid );
 		if ( $ozProfile->valid() ) {
-			if ( $ozProfile->getField( 'ozuid' ) == $ozuid ) {
-				if ( $oz->hash( $ozpwd ) == $ozProfile->getField( 'ozpwd' ) ) {
+			if ( $ozProfile->getField( 'oz_uid' ) == $ozuid ) {
+				if ( $oz->hash( $ozpwd ) == $ozProfile->getField( 'oz_pwd' ) ) {
 					$_SESSION[ 'is_auth' ]      = true;
 					$_SESSION[ 'profile' ]      = $ozProfile->getAllFields();
 					$_SESSION[ 'profile_type' ] = $authType;
+					return true;
 				} else {
 					$this->errorId = 'ERR0606';
-					$this->errorMsg = 'Error: Invalid Password';
+					$this->errorMsg = $error_prefix . 'Invalid Password: ' . $ozuid;
+					$oz->logData( $this->errorId , $this->errorMsg );
 				}
 			} else {
 				$this->errorId = 'ERR0606';
-				$this->errorMsg = 'Error: Invalid Account';
+				$this->errorMsg = $error_prefix . 'Invalid Account: ' . $ozuid;
+				$oz->logData( $this->errorId , $this->errorMsg );
 			}
 		} else {
 			$this->errorId = 'ERR0605';
-        	$this->errorMsg = 'Error: Profile disabled';
+        	$this->errorMsg = $error_prefix . 'Profile disabled: ' . $ozuid;
+        	$oz->logData( $this->errorId , $this->errorMsg );
 		}
+		return false;
 	}
 }
+
 
 $ozSession = new Session();
 $oz->varExport( 'ozSession' , $ozSession );

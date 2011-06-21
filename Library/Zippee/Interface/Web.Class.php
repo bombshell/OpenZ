@@ -55,7 +55,7 @@ class Framework extends Core
 	 * Note: This function, if debug level 2, will include a backtrace in the output
 	 *  
 	 */
-	public function printError($errorid, $errormsg)
+	public function printError( $errorid , $errormsg , $title = null )
 	{
 		/* Set default hidden message */
 		$hidden_msg = 'Unfortunately, we\'ve encountered an error at this time';
@@ -66,7 +66,7 @@ class Framework extends Core
 			$hidden   = true;
 		}
 		
-		$replace[ '<%version%>' ]      = FW_VERSION;
+		$replace[ '<%title%>' ]        = ( !empty( $title ) ) ? $title : '<strong><span style="color: red;">Zippee</span> ' . FW_VERSION . '</strong>';
 		$replace[ '<%message_type%>' ] = '<span style="color: red;">Error</span>';
 		$replace[ '<%message_code%>' ] = $errorid;
 		$replace[ '<%config_name%>' ]  = $this->config[ 'LG_Config_Name' ];

@@ -90,7 +90,8 @@ class Http extends Framework
 		if ( !empty( $url ) ) {
 			if ( !preg_match( '`(http(s?)://)(.*?)/`' , $url ) ) {
 				$url = preg_replace( '`^/`' , '' , $url );
-				$url = $this->getHostPath(null) . $url;
+				$url = 'http://' . $_SERVER[ 'HTTP_HOST' ] . '/' . $url;
+				
 			}
 			/* check if url is valid */
 			if ( $this->isHostvalid( $url ) ) {
@@ -127,6 +128,6 @@ class Http extends Framework
 		if ( preg_match( '/\/$/' , $host ) )
 			$host .= '/';
 			
-		var_dump( $host );
+		return $host;
 	}
 }

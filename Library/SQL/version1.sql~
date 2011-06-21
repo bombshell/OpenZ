@@ -46,7 +46,7 @@ UNLOCK TABLES;
 -- Table structure for table `oz_accounts`
 --
 
-DROP TABLE IF EXISTS `oz_accounts_clients`;
+DROP TABLE IF EXISTS `oz_account_clients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `oz_accounts` (
@@ -86,10 +86,10 @@ UNLOCK TABLES;
 -- Table structure for table `oz_accounts_admin`
 --
 
-DROP TABLE IF EXISTS `oz_accounts_admin`;
+DROP TABLE IF EXISTS `oz_account_admins`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `oz_accounts_admin` (
+CREATE TABLE `oz_account_admins` (
   `ozid` int(11) NOT NULL,
   `oz_realname` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
   `oz_uid` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -106,9 +106,9 @@ CREATE TABLE `oz_accounts_admin` (
 -- Dumping data for table `oz_accounts_admin`
 --
 
-LOCK TABLES `oz_accounts_admin` WRITE;
+LOCK TABLES `oz_account_admins` WRITE;
 /*!40000 ALTER TABLE `oz_accounts_admin` DISABLE KEYS */;
-INSERT INTO `oz_accounts_admin` VALUES (0,'Root Account','root','63a9f0ea7bb98050796b649e85481845','root@example.com',1307394747,'1','0');
+INSERT INTO `oz_account_admins` VALUES (0,'Root Account','root','63a9f0ea7bb98050796b649e85481845','root@example.com',1307394747,'1','0');
 /*!40000 ALTER TABLE `oz_accounts_admin` ENABLE KEYS */;
 UNLOCK TABLES;
 

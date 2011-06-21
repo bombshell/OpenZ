@@ -26,8 +26,8 @@ DROP TABLE IF EXISTS `oz_account_mods`;
 CREATE TABLE `oz_account_mods` (
   `oz_modid` int(11) NOT NULL,
   `oz_clientid` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `oz_modtime` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `oz_modadmin` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `oz_time_mod` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `oz_admin_mod` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
   `oz_mod` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`oz_modid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

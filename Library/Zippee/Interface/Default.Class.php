@@ -206,7 +206,12 @@ class Core
 				$read = false;
 			}
 		} elseif ( is_file( $file ) ) {
-			if ( $h = @fopen( $file , 'r+' ) ) {
+			/* Open File for reading and writing */
+			if ( !$h = @fopen( $file , 'r+' ) )
+				/* Fall back to reading */ 
+				$h = @fopen( $file , 'r' );
+				
+			if ( is_resource( $h ) ) {
 				/*** Feature added 04/25/2011 : it seems there's problems
 				 on subsequent reads in the same excution, this a workaround, let's keep the file handle
 				 in memory during the excution.
@@ -217,6 +222,7 @@ class Core
 					$read = false;
 				}
 			} else {
+
 				$this->errorId = 'ERR0105';
 				$this->errorMsg = "Unable to open $file. PHP Error: " . $this->capturePhpError();
 				if ( $this->debug >= 1 ) {
@@ -271,7 +277,7 @@ class Core
 		/* Error checking and fixing */
 		if ( $file == null || empty( $file ) ) {
 			/* Create a temp file */
-			$file = tempnam( $this->tempDir , 'lg_' );
+			$file = tempnam( $this->getTempPath() , 'zpp_' );
 			$is_temp_file = true;
 		} elseif ( !empty( $writeBackup ) ) {
 			/* Feature added: 01/15/2011 */

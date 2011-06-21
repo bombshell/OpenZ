@@ -20,7 +20,7 @@ class OZ_Core extends Framework
 {
 	private $init;
 	
-	public function __construct( $config )
+	public function __construct( $config = null )
 	{
 		parent::__construct( $config );
 	}
@@ -33,6 +33,14 @@ class OZ_Core extends Framework
 	 */
 	public function timeToStr( $time )
 	{
+		/* Atempt to convert string to long */
+		if ( !is_int( $time ) ) {
+			if ( preg_match( '/\d*/' , $time ) ) 
+				settype( $time , 'integer' );
+			else 
+			 return null;	
+		}
+		
 		return date( 'm/d/Y h:i:s A' , $time );
 	}
 	
@@ -138,7 +146,7 @@ class OZ_Init extends OZ_Core
 	
 	public function checkDatabase()
 	{
-		global $zppZDatabase, $OZCFG;
+		global $zppZDatabase, $OZCFG, $ozProfile;
 		/* Verify if the connection was made */
 		if ( $zppZDatabase->errorId == 'ERR0403' ) {
 			oz_quit( OZ_ERROR . 'Unable to establish a connection to the database: ' . $zppZDatabase->errorMsg );
@@ -146,28 +154,40 @@ class OZ_Init extends OZ_Core
 		
 		//"Table 'ozdb.oz_accounsts1' doesn't exist"
 		/* Tables exists, if not, create them */
-		$tables = array( 'oz_accounts1' , 'oz_accounts_admin' , 'oz_login_counts' , 'oz_account_mods' );
-		foreach( $tables as $table ) {
-			$zppZDatabase->setTableName( $table );
-			if ( !$zppZDatabase->query() ) {
-				if ( preg_match( "/Table '{$OZCFG[ 'Database' ][ 'Name' ]}.$table' doesn't exist/" , $zppZDatabase->errorMsg ) ) {
-					$linebreak = ( $this->sapi == 'web' ) ? '<br><br>Refresh Browser' : "\n\n" . 'Re-run script ' . $_SERVER[ 'PHP_SELF' ];
-					oz_quit( 'Error: Detected missing table(s): Automatically executed SQL script' . $linebreak );
+		$path = $this->getTempPath() . '.openZ_disabledbcheck';
+		if ( !file_exists( $path ) ) {
+			$tables = array( 'oz_accounts_admin' , 'oz_login_counts' , 'oz_account_mods' );
+			foreach( $tables as $table ) {
+				$zppZDatabase->setTableName( $table );
+				if ( !$zppZDatabase->query() ) {
+					if ( preg_match( "/Table '{$OZCFG[ 'Database' ][ 'Name' ]}.$table' doesn't exist/" , $zppZDatabase->errorMsg ) ) {
+						if ( $sql = file_get_contents( OZ_PATH_LIBRARY . 'SQL/version1.sql' ) ) {
+							$zppZDatabase->exec( $sql );
+					    
+							/* Check if SQL Excution went well */
+							if ( $zppZDatabase->errorId == 'ERR0401' )
+								oz_quit( 'Error: Failed to create missing tables: SQL Excution failed: ' . $zppZDatabase->errorMsg );
+						} else {
+							oz_quit( 'Error: Failed to create missing tables: SQL Excution failed: ' . $zppZDatabase->errorMsg );
+						}
+						
+						/* Disable Check */
+						$this->fileWrite( 'openZ_disabledbcheck' , $path ); 
 					
-					$sql = $this->fileRead( OZ_PATH_LIBRARY . 'SQL/version1.sql' );
+						$linebreak = ( $this->sapi == 'web' ) ? '<br><br>Refresh Browser' : "\n\n" . 'Re-run script ' . $_SERVER[ 'PHP_SELF' ];
+						oz_quit( 'Error: Detected missing table(s): Automatically executed SQL script' . $linebreak );
+					}
 				}
 			}
 		}
-		exit;
-	}
-	
-	public function close()
-	{
-		global $ozProfile;
+		
 		$ozProfile->setType( 'admin' );
 		if ( !$ozProfile->getByName( 'root' ) )
 			oz_quit( 'Error: Root admin account missing' );
-			
+	}
+	
+	public function close()
+	{	
 		if ( $this->sapi == 'cli' ) {
 			oz_std();
 			if ( $_SERVER[ 'USER' ] != 'root' ) {

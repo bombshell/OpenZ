@@ -31,10 +31,10 @@ class Profile
 		$ozuid = trim( $ozuid );
 		if ( @$this->currProfile[ 'ozuid' ] != $ozuid ) {
 			if ( $this->profileType == 'admin' )
-				$zppZDatabase->setTableName( 'oz_accounts_admins' );
+				$zppZDatabase->setTableName( 'oz_account_admins' );
 			else 
-				$zppZDatabase->setTableName( 'oz_accounts_clients');
-			$account = $zppZDatabase->query( '*' , "WHERE ozuid = '$ozuid'" );
+				$zppZDatabase->setTableName( 'oz_account_clients');
+			$account = $zppZDatabase->query( '*' , "WHERE oz_uid = '$ozuid'" );
 			if ( empty( $account ) )
 				return false;
 			$this->currProfile = $account[0];
@@ -52,6 +52,19 @@ class Profile
 		return $this->currProfile[ $field ];
 	}
 	
+	/**
+	 * 
+	 * Return strip to lower version of oz_uid
+	 * for *Nix usernames compatability
+	 * @access public
+	 * @return (string) Profile Username
+	 *  
+	 */
+	public function getUid()
+	{
+		return strtolower( $this->currProfile[ 'oz_uid' ] );
+	}
+	
 	public function getAllFields()
 	{
 		return $this->currProfile;
@@ -60,14 +73,70 @@ class Profile
 	public function valid()
 	{
 		if ( $this->profileType == 'admin' ) {
-			if ( $this->currProfile[ 'bms_account_status' ] != 'Suspended' ) {
+			if ( $this->currProfile[ 'oz_status' ] != 'Suspended' ) {
 				return true;
 			}
-		} elseif ( $this->currProfile[ 'bms_email_valid' ] == 1 
-				&& ( $this->currProfile[ 'bms_account_status' ] != 'Suspended' || $this->currProfile[ 'bms_account_status' ] != 'Inactive' ) ) {
+		} elseif ( @$this->currProfile[ 'oz_emailvalid' ] == 1 
+				&& ( $this->currProfile[ 'oz_status' ] != 'Suspended' || $this->currProfile[ 'oz_status' ] != 'Inactive' ) ) {
 			return true;
 		}
 		return false;
+	}
+	
+	public function package()
+	{
+		global $OZCFG;
+		
+		if ( !empty( $OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ] ) ) {
+			return 	$OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ];
+		} else {
+			return 'Undefine';
+		}
+	}
+	
+	public function activateShell()
+	{
+		global $ozSystem;
+		
+		/* Check if we have profile to operate on */
+		if ( !$this->profileOpen() ) 
+			return false;
+		
+		/* Check if user doesn't exists */
+		if ( $ozSystem->userExists( $this->getUid() ) ) {
+			$this->errorId = 'ERR0703';
+			$this->errorMsg = 'Error: Account already exists on system';
+			return false;
+		}
+		
+	}
+	
+	/**
+	 * 
+	 * Checks if a profile is currently open
+	 * for usage
+	 * @access public
+	 * @return (bool) True if a  profile is open, false otherwise
+	 * 
+	 */
+	public function profileOpen()
+	{
+		if ( !empty( $this->currProfile ) )
+			return true;
+		
+		$this->errorId = 'ERR0000';
+		$this->errorMsg = 'Notice: profileOpen(): No profile open';
+		return false;
+	}
+	
+	public function modifyProfile( $data , $reason )
+	{
+		
+	}
+	
+	public function close()
+	{
+		$this->currProfile = null;
 	}
 }
 
