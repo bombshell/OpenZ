@@ -14,15 +14,35 @@ class Console
 		system( 'clear' );
 	}
 	
-	public function printOption()
+	public function showOptionInput()
 	{
-		print "\nOptions: ";
+		print "\nOption: ";
 		return $this->getInput();
+	}
+	
+	public function showOptionForm( $formData )
+	{
+		global $oz;
+		
+		if ( is_array( $formData ) ) {
+			while(true) {
+				foreach( $formData as $option => $name ) 
+					$oz->printf( '   ' . $option . '. ' . $name );
+				$option = $this->showOptionInput();
+				if ( empty( $formData[ $option ] ) ) {
+					$oz->printf( 'Error: Invalid Option' );
+					sleep(2);
+				} else 
+					break;
+			}
+			return $option;
+		}
+			
 	}
 	
 	public function pause()
 	{
-		print "Press enter to continue...\n";
+		print "Press enter to continue...";
 		$this->getInput();
 	}
 	
@@ -76,7 +96,44 @@ class Console
 	
 	public function showTitle( $str )
 	{
-		print "\n\n$str\n";
+		$this->clear();
+		print "\n\n  $str\n";
+		$this->line();
+	}
+	
+	public function showMenu( $menuTitle , $menuData )
+	{
+		global $oz;
+		
+		while(true) {
+			$this->showTitle( $menuTitle );
+			foreach( $menuData as $option => $menu ) {
+				$oz->printf( "   $option. {$menu[ 'Name' ]}" );
+			}
+			$oz->printf( '   Type m to go to previous menu' );
+			$option = $this->showOptionInput();
+			
+			if ( !empty( $menuData[ $option ] ) ) {
+				return $option;
+			} else {
+				$oz->printf( 'Error: Invalid Option' );
+				sleep(2);
+			}
+		}
+	}
+	
+	public function showForm( $form )
+	{
+		if ( is_array( $form ) )
+			foreach( $form as $field ) {
+				$return[ $field ] = $this->showInput( $field );
+			}
+	}
+	
+	public function progressBar()
+	{
+		usleep('500' );
+		print '..';
 	}
 }
 

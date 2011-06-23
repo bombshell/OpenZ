@@ -16,7 +16,7 @@
 	
 ***/
 
-class Email
+class Email extends Email_Core
 {
 	
 }

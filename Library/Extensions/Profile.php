@@ -29,11 +29,8 @@ class Profile
 			return false;
 			
 		$ozuid = trim( $ozuid );
-		if ( @$this->currProfile[ 'ozuid' ] != $ozuid ) {
-			if ( $this->profileType == 'admin' )
-				$zppZDatabase->setTableName( 'oz_account_admins' );
-			else 
-				$zppZDatabase->setTableName( 'oz_account_clients');
+		if ( @$this->currProfile[ 'ozuid' ] != $ozuid ) {			
+			$zppZDatabase->setTableName( $this->getTable() );
 			$account = $zppZDatabase->query( '*' , "WHERE oz_uid = '$ozuid'" );
 			if ( empty( $account ) )
 				return false;
@@ -45,6 +42,11 @@ class Profile
 	public function setType( $profileType )
 	{
 		$this->profileType = $profileType;
+	}
+	
+	public function getType()
+	{
+		return $this->profileType;
 	}
 	
 	public function getField( $field )
@@ -88,27 +90,18 @@ class Profile
 		global $OZCFG;
 		
 		if ( !empty( $OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ] ) ) {
-			return 	$OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ];
-		} else {
-			return 'Undefine';
-		}
+			return 	$OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid' ] ][ 'Name' ];
+		} 
+		return false;
 	}
 	
-	public function activateShell()
+	public function isLocked()
 	{
-		global $ozSystem;
-		
-		/* Check if we have profile to operate on */
-		if ( !$this->profileOpen() ) 
-			return false;
-		
-		/* Check if user doesn't exists */
-		if ( $ozSystem->userExists( $this->getUid() ) ) {
-			$this->errorId = 'ERR0703';
-			$this->errorMsg = 'Error: Account already exists on system';
-			return false;
+		if ( $this->currProfile[ 'oz_status' ] == 'Suspended'
+				|| $this->currProfile[ 'oz_status' ] == 'Inactive' ) {
+			return true;			
 		}
-		
+		return false;
 	}
 	
 	/**
@@ -131,12 +124,39 @@ class Profile
 	
 	public function modifyProfile( $data , $reason )
 	{
+		global $zppZDatabase, $oz;
 		
+		/* Set User table */
+		$zppZDatabase->setTableName( $this->getTable() );
+		if ( !$zppZDatabase->update( $data , 'WHERE oz_uid = "' . $this->currProfile[ 'oz_uid' ] . '"' ) ) {
+			$oz->logData( $zppZDatabase->errorId , 'Error: Failed at updating profile: ' . $zppZDatabase->errorMsg , array( 'file' => __FILE__ , 'line' => __LINE__ ) );
+			return false;
+		}
+			
+		/* Series of checks */
+		if ( empty( $reason ) )
+			$reason = 'Unknown';
+			
+		$cols[ 'oz_clientid' ] = $this->currProfile[ 'ozid' ];
+		$cols[ 'oz_time_mod' ] = time();
+		$cols[ 'oz_mod_user' ] = $_SESSION[ 'profile' ][ 'oz_uid' ];
+		$cols[ 'oz_mod' ]      = $reason;
+		$zppZDatabase->setTableName( 'oz_account_mods' );
+		$zppZDatabase->insert( $cols );
 	}
 	
 	public function close()
 	{
 		$this->currProfile = null;
+	}
+	
+	private function getTable()
+	{
+		if ( $this->profileType == 'admin' ) {
+			return 'oz_account_admins';
+		} else {
+			return 'oz_account_clients';
+		}
 	}
 }
 

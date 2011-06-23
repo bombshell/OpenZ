@@ -38,9 +38,7 @@ $zppZDatabase->setTableName( 'oz_modules_info' );
 $i = 1;
 if ( $menus = $zppZDatabase->query() ) {
 	while ( true ) {
-		$ozConsole->clear();
 		$ozConsole->showTitle( 'Menu...' );
-		$ozConsole->line();
 	
 		foreach( $menus as $menu ) {
 			//var_dump( $menu );
@@ -54,7 +52,7 @@ if ( $menus = $zppZDatabase->query() ) {
 		$oz->printf('');
 		$oz->printf( "Welcome " . $_SESSION['profile' ][ 'oz_uid' ] );
 		
-		$option = $ozConsole->printOption();
+		$option = $ozConsole->showOptionInput();
 		$ozConsole->shouldQuit( $option );
 		if ( @$item[ $option ] ) {
 			$ozConsole->clear();

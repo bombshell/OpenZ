@@ -24,8 +24,6 @@ $OZPATH[ 'ZippeeConfig' ] = 'Config/Zippee/OZ_local.php'; /* Make the aproproita
  * Package id 
 ***/
 
-$ozCommands[ 'Defaults' ][ 'useradd' ];
-
 $OZCFG[ 'Package' ][1][ 'Name' ] = 'Standard';
 $OZCFG[ 'Package' ][1][ 'Quota' ] = '50000';
 $OZCFG[ 'Package' ][1][ 'SystemGroup' ] = 'clients';
@@ -38,7 +36,18 @@ $OZCFG[ 'Package' ][3][ 'Name' ] = 'Premium';
 $OZCFG[ 'Package' ][3][ 'Quota' ] = '150000';
 $OZCFG[ 'Package' ][3][ 'SystemGroup' ] = 'users';
 
+/***
+ * Quote
+***/
+$ozConfig[ 'Path' ][ 'Quote' ] = '/home';
 
+/***
+ * Commands 
+ * 
+ * <%oz_uid%> Username
+ * 
+***/
+$ozCommands[ 'Post.Activate' ][] = 'chgrp www /home/<$oz_uid%>/';
 
 /* Absolute path to Zippee FrameWork 
   Note: If left empty, openZ will default to $BASEPATH . 'Library/Zippee/'

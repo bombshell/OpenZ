@@ -22,7 +22,7 @@
  * @version 0.2.0
  * 
  */
-Class Email_Core //extends Framework
+Class Email_Core extends Framework
 {
 	/**
 	 * @access Public
