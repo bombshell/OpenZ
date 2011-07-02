@@ -1,0 +1,23 @@
+________________________________________________________________________________________________________
+
+Server Information:
+
+IRC
+	Address: irc.bombshellz.net
+	Port:    6667
+SSH
+	Address: ssh.bombshellz.net
+	Port:    22
+	         443
+ZNC
+	Web Address: https://znc.bombshellz.net:8000/
+	Address: znc.bombshellz.net
+	Port:    8000
+Usermin
+	Address: https://control.bombshellz.net:1001/
+	
+--
+
+Best Regards,
+
+The Admin Team!

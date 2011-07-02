@@ -44,6 +44,11 @@ class OZ_Core extends Framework
 		return date( 'm/d/Y h:i:s A' , $time );
 	}
 	
+	public function time()
+	{
+		return date( 'm/d/Y h:i:s A' );
+	}
+	
 	/**
 	 * 
 	 * Prints a formatted string
@@ -80,6 +85,14 @@ class OZ_Core extends Framework
 		return false;
 	}
 	
+	public function realPath( $path )
+	{
+		if ( !preg_match( '/^(\w:\\\|\/)/' , $path ) ) {
+			return OZ_PATH_BASE . $path;
+		}
+		return $path;
+	}
+	
 	public function varExport( $name , $value )
 	{
 		$GLOBALS[ $name ] = $value;
@@ -90,7 +103,7 @@ class OZ_Init extends OZ_Core
 {	
 	public function __construct()
 	{
-		global $OZCFG, $OZPATH;
+		global $OZCFG, $OZPATH, $ozConfig;
 		
 		/* Init Zippee framework */
 		if ( !preg_match( '/^\//' , $OZPATH[ 'ZippeeConfig' ] ) )
@@ -114,11 +127,16 @@ class OZ_Init extends OZ_Core
 		/* Load OpenZ Classes */
 		$zppFilesystem = new Filesystem();
 		$path = OZ_PATH_LIBRARY . 'Extensions/';
-		$exts = $zppFilesystem->dirRead( $path );
+		$ExtensionFiles = $zppFilesystem->dirRead( $path );
 		
-		$oz = $this;
-		foreach( $exts as $ext ) {
-			require $path . $ext;
+		foreach( $ExtensionFiles as $File ) {
+			$Extension = basename( $File , '.php' );
+			require $path . $File;
+			if ( @$ozInitThisExtension ) {
+				$ExtensionName = 'oz' . $Extension;
+				$$ExtensionName = new $Extension;
+				$this->varExport( $ExtensionName , $$ExtensionName );
+			}
 		}
 	}
 	
@@ -188,12 +206,15 @@ class OZ_Init extends OZ_Core
 	
 	public function close()
 	{	
+		global $ozEmail, $ozConfig;
 		if ( $this->sapi == 'cli' ) {
 			oz_std();
 			if ( $_SERVER[ 'USER' ] != 'root' ) {
 				oz_quit( OZ_ERROR . OZ_NAME . ' needs to be run as root' );
 			}
 		}
+		
+		
 	}
 }
 

@@ -1,6 +1,7 @@
-#!/usr/bin/env php
+#!/usr/local/bin/php
 <?php
-require '../../../main.php';
+
+require dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '../../../main.php';
 
 function banner()
 {
@@ -15,21 +16,36 @@ function banner()
 banner();
 print "This system is currently being tested\n";
 print "Type q to exit at anytime\n";
-$login = false;
-do {
-	$username = $ozConsole->showInput( 'Please enter your OpenZ Administrator Username' );
+while(true) {
+	$username = Console::showInput( 'Please enter your OpenZ Administrator *Username*' );
 	$ozConsole->shouldQuit( $username );
 	shell_exec( 'stty -echo' );
-	$password = $ozConsole->showInput( "\n" . 'Please enter your OpenZ Administrator Password' );
+	$password = Console::showInput( "\n" . 'Please enter your OpenZ Administrator *Password*' );
 	shell_exec( 'stty echo' );
 	
 	if ( $ozSession->auth( $username , $password , 'admin' ) ) {
-		$login = true;
+		break;
 	} else {
 		print "\n\n" . OZ_ERROR . "Credentials Provided are invalid: Try again\n\n";
 	}
-} while ( $login == false );
+} 
 
+/***
+ * Check if THIS user requires a password reset
+ */
+if ( $_SESSION[ 'profile' ][ 'oz_pwd_requires_reset' ] == '1' ) {
+	pf("\n" . 'A password reset is required!');
+	$password = Console::showPasswordForm();
+	
+	pf("\n" . 'Updating Database...');
+	$ozProfile->setType( 'admin' );
+	$ozProfile->getByName( $_SESSION[ 'profile' ][ 'oz_uid' ] );
+	$data[ 'oz_pwd' ] = $oz->hash( $password );
+	$data[ 'oz_pwd_requires_reset' ] = '0';
+	$ozProfile->update($data);
+	pf('DOne');
+	sleep(2);
+}
 
 /***
  * Build Menu
@@ -38,28 +54,35 @@ $zppZDatabase->setTableName( 'oz_modules_info' );
 $i = 1;
 if ( $menus = $zppZDatabase->query() ) {
 	while ( true ) {
-		$ozConsole->showTitle( 'Menu...' );
+		Console::showTitle( 'Menu...' );
 	
 		foreach( $menus as $menu ) {
-			//var_dump( $menu );
-			$oz->printf( "   " . $i . ". {$menu[ 'oz_modname' ]}" );
-			$item[ $i ] = $menu[ 'oz_modfile' ];
-			$i++;	
+			//var_dump( $menus );
+			//var_dump( $menu  );
+			if ( !empty( $menu[ 'oz_modname' ] ) ) {
+				pf( "   " . $i . ". {$menu[ 'oz_modname' ]}" );
+				$item[ $i ] = $menu;
+				$i++;
+			}	
 		}
 		$i = 1;
-		$oz->printf( '   q to quit' );
+		pf( '   q to quit' );
 		
-		$oz->printf('');
-		$oz->printf( "Welcome " . $_SESSION['profile' ][ 'oz_uid' ] );
+		pf('');
+		pf( "Welcome " . $_SESSION['profile' ][ 'oz_uid' ] );
 		
-		$option = $ozConsole->showOptionInput();
+		$option = Console::showOptionInput();
 		$ozConsole->shouldQuit( $option );
 		if ( @$item[ $option ] ) {
-			$ozConsole->clear();
-			require OZ_PATH_LIBRARY . path_rewrite( 'Modules/' . $item[ $option ] );
+			Console::clear();
+			require OZ_PATH_LIBRARY . path_rewrite( 'Modules/' . $item[ $option ][ 'oz_modfile' ] );
+			if ( !empty( $init_failure ) ) {
+				pf("Error: Failed to load module {$item[$option]['oz_modname']} {$item[$option]['oz_modver']}: $init_failure");
+				$ozConsole->pause();
+			}
 		} else {
 			print "Error: Invalid Option\n";
-			$ozConsole->pause();
+			Console::pause();
 		}
 	}	
 } else {

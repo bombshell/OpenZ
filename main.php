@@ -22,24 +22,83 @@ $OZPATH[ 'ZippeeConfig' ] = 'Config/Zippee/OZ_local.php'; /* Make the aproproita
 
 /***
  * Package id 
+ * If Package default parameter is missing, openZ will default to package 1
+ * 
 ***/
+$ozConfig[ 'Package' ][ 'Default' ] = '1';
+$ozConfig[ 'Package' ][1][ 'Name' ] = 'Standard';
+$ozConfig[ 'Package' ][1][ 'Quota' ] = '50000';
+$ozConfig[ 'Package' ][1][ 'SystemGroup' ] = 'clients';
+$ozConfig[ 'Package' ][1][ 'SystemGroups' ] = 'standard'; /* Separated By a Comma */
 
-$OZCFG[ 'Package' ][1][ 'Name' ] = 'Standard';
-$OZCFG[ 'Package' ][1][ 'Quota' ] = '50000';
-$OZCFG[ 'Package' ][1][ 'SystemGroup' ] = 'clients';
+$ozConfig[ 'Package' ][2][ 'Name' ] = 'Contrib';
+$ozConfig[ 'Package' ][2][ 'Quota' ] = '100000';
+$ozConfig[ 'Package' ][2][ 'SystemGroup' ] = 'users';
+$ozConfig[ 'Package' ][1][ 'SystemGroups' ] = 'contrib';
 
-$OZCFG[ 'Package' ][2][ 'Name' ] = 'Contrib';
-$OZCFG[ 'Package' ][2][ 'Quota' ] = '100000';
-$OZCFG[ 'Package' ][2][ 'SystemGroup' ] = 'users';
-
-$OZCFG[ 'Package' ][3][ 'Name' ] = 'Premium';
-$OZCFG[ 'Package' ][3][ 'Quota' ] = '150000';
-$OZCFG[ 'Package' ][3][ 'SystemGroup' ] = 'users';
+$ozConfig[ 'Package' ][3][ 'Name' ] = 'Contrib+';
+$ozConfig[ 'Package' ][3][ 'Quota' ] = '150000';
+$ozConfig[ 'Package' ][3][ 'SystemGroup' ] = 'users';
+$ozConfig[ 'Package' ][1][ 'SystemGroups' ] = 'contribplus';
 
 /***
- * Quote
+ * Password
+ */
+$ozPassword[ 'Client' ][ 'PasswordAging' ] = true;
+$ozPassword[ 'Client' ][ 'Maximum.Days' ] = '60';
+$ozPassword[ 'Client' ][ 'Maximum.Inactive' ] = '3';
+
+$ozPassword[ 'Admin' ][ 'PasswordAging' ] = true;
+$ozPassword[ 'Admin' ][ 'Maximum.Days' ] = '30';
+$ozPassword[ 'Admin' ][ 'Maximum.Inactive' ] = '0';
+
+
+/***
+ * Email
 ***/
-$ozConfig[ 'Path' ][ 'Quote' ] = '/home';
+$ozConfig[ 'Email.From' ][ 'Default' ] = array( 
+	'Address' => 'noreply@bombshellz.net',
+	'Name' => 'Bombshellz Network' 
+); 
+
+$ozConfig[ 'Email.From' ][ 'Admin' ] = array( 
+	'Address' => 'admin@bombshellz.net',
+	'Name' => '' 
+); 
+
+$ozConfig[ 'Email' ][ 'Name' ] = 'Bombshellz Networks';
+$ozConfig[ 'Path' ][ 'EmailLogo' ] = 'Library/Email/BombshellzLogo.txt';
+$ozConfig[ 'Path' ][ 'EmailSig' ] = 'Library/Email/BombshellzSig.txt';
+
+/***
+ * Lock Reasons
+***/
+$ozConfig[ 'LockReasons' ][1] = 'Too many background processes';
+$ozConfig[ 'LockReasons' ][2] = 'Using more then allotted ports';
+$ozConfig[ 'LockReasons' ][3] = 'Prohibited Software';
+$ozConfig[ 'LockReasons' ][4] = 'Multiple Accounts';
+$ozConfig[ 'LockReasons' ][5] = 'Policy Violation(s)';
+$ozConfig[ 'LockReasons' ][6] = 'Account Inactive';
+//$ozConfig[ 'LockReasons' ][2] = '';
+
+/***
+ * Profile
+ * 1 = Pending
+ * 2 = Active
+ * 
+ * Default ClientStatus
+ *   Pending
+ * Default AdminStatus
+ *   Active
+ *   
+***/
+//$ozConfig[ 'Profile' ][ 'Default.Add.ClientStatus' ] = 1;
+//$ozConfig[ 'Profile' ][ 'Default.Add.AdminStatus' ]  = 2;
+
+/***
+ * Quota
+***/
+$ozConfig[ 'Path' ][ 'Quota' ] = '/home';
 
 /***
  * Commands 
@@ -47,7 +106,7 @@ $ozConfig[ 'Path' ][ 'Quote' ] = '/home';
  * <%oz_uid%> Username
  * 
 ***/
-$ozCommands[ 'Post.Activate' ][] = 'chgrp www /home/<$oz_uid%>/';
+$ozCommands[ 'Post.Activate' ][] = 'chgrp www /home/%oz_uid%/';
 
 /* Absolute path to Zippee FrameWork 
   Note: If left empty, openZ will default to $BASEPATH . 'Library/Zippee/'

@@ -57,7 +57,7 @@ if ( $capat_ver != str_replace( 'v' , '' , OZ_VER ) ) {
  3. Register module 
 ***/
 $moduleSetup = new ModuleSetup();
-$moduleSetup->addToDb( $installCfg[ 'mod' ][ 'name' ] , $installCfg[ 'mod' ][ 'disc' ] , $installCfg[ 'mod' ][ 'file' ] );
+$moduleSetup->addToDb( $installCfg[ 'mod' ][ 'Name' ] , $installCfg[ 'mod' ][ 'Disc' ] , $installCfg[ 'mod' ][ 'File' ] );
 
 /***
  4. Copy Contents

@@ -39,6 +39,11 @@ class Profile
 		return true;
 	}
 	
+	public function setByData( $data )
+	{
+		$this->currProfile = $data;
+	}
+	
 	public function setType( $profileType )
 	{
 		$this->profileType = $profileType;
@@ -51,7 +56,7 @@ class Profile
 	
 	public function getField( $field )
 	{
-		return $this->currProfile[ $field ];
+		return @$this->currProfile[ $field ];
 	}
 	
 	/**
@@ -85,12 +90,15 @@ class Profile
 		return false;
 	}
 	
-	public function package()
+	public function package( $id = null )
 	{
-		global $OZCFG;
+		global $ozConfig;
 		
-		if ( !empty( $OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ] ) ) {
-			return 	$OZCFG[ 'Package' ][ $this->currProfile[ 'oz_packageid' ] ][ 'Name' ];
+		if ( !empty( $id ) ) {
+			if ( !empty( $ozConfig[ 'Package' ][ $id ] ) )
+				return $ozConfig[ 'Package' ][ $id ][ 'Name' ]; 
+		} elseif ( !empty( $ozConfig[ 'Package' ][ $this->currProfile[ 'oz_packageid'] ] ) ) {
+			return 	$ozConfig[ 'Package' ][ $this->currProfile[ 'oz_packageid' ] ][ 'Name' ];
 		} 
 		return false;
 	}
@@ -98,10 +106,42 @@ class Profile
 	public function isLocked()
 	{
 		if ( $this->currProfile[ 'oz_status' ] == 'Suspended'
-				|| $this->currProfile[ 'oz_status' ] == 'Inactive' ) {
+				/*|| $this->currProfile[ 'oz_status' ] == 'Inactive'*/ ) {
 			return true;			
 		}
 		return false;
+	}
+	
+	public function lock( $lockId )
+	{
+		$data[ 'oz_admin_locked' ] = $_SESSION[ 'profile' ][ 'oz_uid' ];
+		$data[ 'oz_time_locked' ] = time();
+		$data[ 'oz_lockedthreshold' ] = $ozProfile->getField( 'oz_lockedthreshold' ) + 1;
+		$data[ 'oz_lockedreason' ] = $option;
+		return $this->modifyProfile( $data , "Locking Account reason $lockId" );
+	}
+	
+	public function unlock()
+	{
+		global $ozConfig, $oz;
+		
+		$lockThreshold = ( !empty( $ozConfig[ 'LockedThreshold' ] ) ) ? $ozConfig[ 'LockedThreshold' ] : 5;
+		if ( $this->getField( 'oz_lockedthreshold' ) <= $lockThreshold ) {
+			/* Empty fields */
+			$data[ 'oz_admin_locked' ]    = null;
+			$data[ 'oz_time_locked' ]  	  = null;
+			$data[ 'oz_lockedthreshold' ] = null;
+			$data[ 'oz_lockedreason' ]    = null;
+			return $this->modifyProfile( $data , 'Unlocking Account' );
+		} else {
+			$oz->logData( 'ERRx0116' , 'Error: Account ' . $this->currProfile[ 'oz_uid' ] . ' has exceeded lock threshold set in configuration' );
+			return false;
+		} 
+	}
+	
+	public function status()
+	{
+		
 	}
 	
 	/**
@@ -122,14 +162,85 @@ class Profile
 		return false;
 	}
 	
+	public function add( $data )
+	{
+		global $zppZDatabase, $oz, $ozConfig;
+		$zppZDatabase->setTableName( $this->getTable() );
+		
+		/* Check if user already exists */
+		if ( empty( $data[ 'oz_uid' ] ) ) {
+			$this->errorId = 'ERRx0116';
+			$this->errorMsg = 'Error: Profile->add(): Missiong Username';
+			if ( $oz->debug == 2 ) {
+				oz_quit( $this->errorId . ' ' . $this->errorMsg );
+			}
+			$oz->logData( $this->errorId , $this->errorMsg );
+			return false;
+		}
+		if ( $this->getByName( $data[ 'oz_uid' ] ) ) {
+			$this->errorId = 'ERR0703';
+			$this->errorMsg = "Error: Profile->add(): {$data[ 'oz_uid' ]}: Account already exists";
+			$oz->logData( $this->errorId , $this->errorMsg );
+			return false;
+		}
+		
+		if ( $this->profileType == 'admin' ) {
+			switch( @$ozConfig[ 'Profile' ][ 'Default.Add.ClientStatus' ] ) {
+				case 1;
+					$status = 'Pending';
+				break;
+				default:
+					$status = 'Active';
+				break;
+			}
+		} else {
+			switch( @$ozConfig[ 'Profile' ][ 'Default.Add.ClientStatus' ] ) {
+				case 2:
+					$status = 'Active';
+				break;
+				default:
+					$status = 'Pending';
+				break;
+			}
+		}
+		$data[ 'oz_status' ] = $status;
+		$data[ 'oz_time_creation' ] = time();
+		$zppZDatabase->insert( $data );
+		if ( $zppZDatabase->errorId == 'ERR0401' ) {
+			$oz->logData( $zppZDatabase->errorId , 'Error: Profile->add(): ' . $zppZDatabase->errorMsg );
+			return false;
+		}
+		
+		/* Set newly created profile to active */
+		$this->currProfile = $data;
+		return true;
+	}
+	
+	public function update( $data )
+	{
+		global $zppZDatabase, $oz;
+		if ( empty( $data ) )
+			return false;
+		if ( !$this->profileOpen() )
+			return false;
+		
+		$zppZDatabase->update( $data , 'WHERE oz_uid = \'' . $this->getField( 'oz_uid' ) . '\'' );
+		if ( $zppZDatabase->errorId == 'ERR0401' ) {
+			$oz->logData( $zppZDatabase->errorId , 'Error: Profile->update(): ' . $this->getField( 'oz_uid' ) . ': ' . $zppZDatabase->errorMsg );
+			return false;
+		}
+		return true;
+	}
+	
 	public function modifyProfile( $data , $reason )
 	{
 		global $zppZDatabase, $oz;
 		
 		/* Set User table */
 		$zppZDatabase->setTableName( $this->getTable() );
-		if ( !$zppZDatabase->update( $data , 'WHERE oz_uid = "' . $this->currProfile[ 'oz_uid' ] . '"' ) ) {
-			$oz->logData( $zppZDatabase->errorId , 'Error: Failed at updating profile: ' . $zppZDatabase->errorMsg , array( 'file' => __FILE__ , 'line' => __LINE__ ) );
+		$zppZDatabase->update( $data , 'WHERE oz_uid = "' . $this->currProfile[ 'oz_uid' ] . '"' );
+		if ( $zppZDatabase->errorId == 'ERR0401' ) {
+			$oz->logData( $zppZDatabase->errorId , 'Error: Account ' . $this->currProfile[ 'oz_uid' ] . ': Failed at updating profile: ' . $zppZDatabase->errorMsg , array( 'file' => __FILE__ , 'line' => __LINE__ ) );
 			return false;
 		}
 			
@@ -143,6 +254,11 @@ class Profile
 		$cols[ 'oz_mod' ]      = $reason;
 		$zppZDatabase->setTableName( 'oz_account_mods' );
 		$zppZDatabase->insert( $cols );
+		if ( $zppZDatabase->errorId == 'ERR0401' ) {
+			$oz->logData( $zppZDatabase->errorId , 'Error: Account ' . $this->currProfile[ 'oz_uid' ] . ': Profile->modifyProfile(): ' . $zppZDatabase->errorMsg , array( 'file' => __FILE__ , 'line' => __LINE__ ) );
+			return false;
+		}
+		return true;
 	}
 	
 	public function close()
@@ -160,5 +276,4 @@ class Profile
 	}
 }
 
-$ozProfile = new Profile();
-$oz->varExport( 'ozProfile' , $ozProfile );
+$ozInitThisExtension = true;

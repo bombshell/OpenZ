@@ -24,5 +24,4 @@ class Forms
 	}
 }
 
-$ozForms = new Forms();
-$oz->varExport( 'ozForms' , $ozForms );
+$ozInitThisExtension = true;

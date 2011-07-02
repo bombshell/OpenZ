@@ -177,5 +177,4 @@ EOF;
 	
 }
 
-$ozHtml = new Html();
-$oz->varExport( 'ozHtml' , $ozHtml );
+$ozInitThisExtension = true;

@@ -4,33 +4,33 @@ class Console
 {
 	public $quitHooks; 
 	
-	public function getInput()
+	public static function getInput()
 	{
 		return trim( fread( STDIN , 1024 ) );
 	}
 	
-	public function clear()
+	public static function clear()
 	{
 		system( 'clear' );
 	}
 	
-	public function showOptionInput()
+	public static function showOptionInput()
 	{
 		print "\nOption: ";
-		return $this->getInput();
+		return self::getInput();
 	}
 	
-	public function showOptionForm( $formData )
+	public static function showOptionForm( $formData )
 	{
 		global $oz;
 		
 		if ( is_array( $formData ) ) {
 			while(true) {
 				foreach( $formData as $option => $name ) 
-					$oz->printf( '   ' . $option . '. ' . $name );
-				$option = $this->showOptionInput();
+					pf( '   ' . $option . '. ' . $name );
+				$option = self::showOptionInput();
 				if ( empty( $formData[ $option ] ) ) {
-					$oz->printf( 'Error: Invalid Option' );
+					pf( 'Error: Invalid Option' );
 					sleep(2);
 				} else 
 					break;
@@ -40,10 +40,27 @@ class Console
 			
 	}
 	
-	public function pause()
+	public static function showPasswordForm()
 	{
-		print "Press enter to continue...";
-		$this->getInput();
+		while(true) {
+			shell_exec( 'stty -echo' );
+			$password1 = self::showInput( 'New Password' );
+			pf('');
+			$password2 = self::showInput( 'Verify Password' );
+			shell_exec( 'stty echo' );
+			pf('');
+			pf('');
+			if ( $password1 == $password2 )
+				return $password1;
+			else 
+				pf('Passwords do not match');
+		}	
+	}
+	
+	public static function pause()
+	{
+		print "\nPress enter to continue...";
+		self::getInput();
 	}
 	
 	public function addQuitHook( $objectName , $object )
@@ -61,12 +78,13 @@ class Console
 		
 		if ( empty( $msg ) )
 			$msg = "\n" . 'Quiting';
-		$oz->printf( $msg );
+		pf( $msg );
 		
 		/* Run quit hooks */
 		if ( !empty( $this->quitHooks ) )
 			foreach( $this->quitHooks as $disc => $object ) {
-				$oz->logData( 'ERR0000' , "Notice: Console: Running Quit Hook: $disc" );
+				if ( $oz->debug >= 1 )
+					$oz->logData( 'ERR0000' , "Notice: Console: Running Quit Hook: $disc" );
 				$object->close();
 			}
 		exit;
@@ -78,12 +96,12 @@ class Console
 			$this->quit();
 	}
 	
-	public function line()
+	public static function line()
 	{
 		print "______________________________________________________________________\n\n";
 	}
 	
-	public function showInput( $str )
+	public static function showInput( $str )
 	{
 		while(true) {
 			print "$str\n: ";
@@ -94,35 +112,35 @@ class Console
 		}
 	}
 	
-	public function showTitle( $str )
+	public static function showTitle( $str )
 	{
-		$this->clear();
+		self::clear();
 		print "\n\n  $str\n";
-		$this->line();
+		self::line();
 	}
 	
-	public function showMenu( $menuTitle , $menuData )
+	public static function showMenu( $menuTitle , $menuData )
 	{
-		global $oz;
-		
 		while(true) {
-			$this->showTitle( $menuTitle );
+			self::showTitle( $menuTitle );
 			foreach( $menuData as $option => $menu ) {
-				$oz->printf( "   $option. {$menu[ 'Name' ]}" );
+				pf( "   $option. {$menu[ 'Name' ]}" );
 			}
-			$oz->printf( '   Type m to go to previous menu' );
-			$option = $this->showOptionInput();
+			pf( '   Type m to go to previous menu' );
+			$option = self::showOptionInput();
 			
-			if ( !empty( $menuData[ $option ] ) ) {
+			if ( $option == 'm' || $option == 'q' ) 
+				return $option;
+			elseif ( !empty( $menuData[ $option ] ) ) {
 				return $option;
 			} else {
-				$oz->printf( 'Error: Invalid Option' );
+				pf( 'Error: Invalid Option' );
 				sleep(2);
 			}
 		}
 	}
 	
-	public function showForm( $form )
+	public static function showForm( $form )
 	{
 		if ( is_array( $form ) )
 			foreach( $form as $field ) {
@@ -130,12 +148,29 @@ class Console
 			}
 	}
 	
-	public function progressBar()
+	public static function showQuestion( $str )
 	{
-		usleep('500' );
+		$choice = self::showInput( $str . ' (y/n)' );
+		switch( $choice ) {
+			case 'y':
+			case 'Y':
+				return true;
+			break;
+		}
+		return false;
+	}
+	
+	public static function showPleaseWait()
+	{
+		self::showTitle( 'Please Wait...' );
+		print 'Processing..';	
+	}
+	
+	public static function showProgressBar()
+	{
+		usleep(950);
 		print '..';
 	}
 }
 
-$ozConsole = new Console();
-$oz->varExport( 'ozConsole' , $ozConsole );
+$ozInitThisExtension = true;

@@ -74,5 +74,4 @@ class Session extends Session_Core
 }
 
 
-$ozSession = new Session();
-$oz->varExport( 'ozSession' , $ozSession );
+$ozInitThisExtension = true;

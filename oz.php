@@ -21,10 +21,13 @@ if ( file_exists( 'CustomInitHook.php' ) )
 	require( 'CustomInitHookBefore.php' );
 	
 /*** FUNCTIONS ***/
-function load_extension( $ext )
+function pf( $str )
 {
-	require BMS_PATH_BASE . path_rewrite( 'Base/Extensions/' . $ext );
-	
+	global $oz;
+	if ( $oz->getSapi() == 'cli' )
+		fwrite( STDOUT , $str . "\n" );
+	else
+		$oz->logData( 'ERR0000' , $str );
 }
 
 function oz_quit( $errorMsg )
