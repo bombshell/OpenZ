@@ -1,0 +1,74 @@
+<?php
+
+/*** Get total Users logged in ***/
+exec( 'who' , $who );
+$logged_users = array();
+if ( !empty( $who ) ) {
+	foreach( $who as $user ) {
+		if ( !in_array( $user , $logged_users  ) ) {
+			$logged_users[] = $user;
+		}		
+	}
+}
+
+/*** Iterate through output ***/
+$ignore_procs = array( '/bin/bash' , '-bash' );
+exec( 'ps aux' , $output );
+foreach( $output as $line ) {
+	/*** Ignore first line and root user ***/
+	if ( !preg_match( '/^(USER)/' , $line ) && !preg_match( '/^(root)/' , $line ) ) {
+		$arr = explode( ' ' , $line );
+		$arr = $OpenZ->removeEmptyArrs( $arr );
+		
+		$uid = $arr[0];
+		$pid = $arr[1];
+		/*** UID may not have the username ***/
+		if ( preg_match( '/^(\d+)$/' , $uid ) ) {
+			$str = `grep ':x:$uid:' /etc/passwd`;
+			preg_match( '/^(.*?):/' , $str , $matches );
+			$uid = $matches[1];
+		}
+		/*** Only flag procs that have an actual account ***/
+		if ( $ozProfile->getByName( $uid ) && $ozProfile->getType() != 'admin' ) {
+			var_dump( $ozProfile->getAllFields() );
+			if ( $ports = $ozSystem->getListeningPorts( $pid ) ) {
+				$assigned_ports = (int) trim( `echo $(( 62000 - ( \`id -u $uid\` - 1000) * 2 ))` );
+				$assigned_ports = array( $assigned_ports , $assigned_ports + 1 );
+			
+				foreach( $ports as $port ) {
+					if ( !in_array( $port[1] , $assigned_ports ) ) {
+						/*** What to do ***/
+						$OpenZ->sendAlert( "User $uid is using muliple ports." );
+					}
+				}
+			}
+			
+			$bin = $OpenZ->arrayToString( $arr , 10 );
+			if ( !$ozSystem->isUserLoggedIn( $uid ) ) {
+				/*** Store User Package ID ***/
+				if ( empty( $procs[ $uid ][ 'package_id' ] ) ) {
+					$procs[ $uid ][ 'package_id' ] = $ozProfile->getField( 'oz_packageid' );
+				}
+				/*** Ignore SCREEN Processes ***/
+				if ( !preg_match( '/^(screen)/i' , $bin ) ) {
+					if ( !in_array( $bin , $ignore_procs ) ) {
+						$procs[ $uid ][ 'procs' ][] = $bin;
+					}
+				}
+			}
+		}
+		
+	}
+}
+
+/*** Check Procs ***/
+if ( !empty( $procs ) ) {
+	foreach( $procs as $user => $attr ) {
+		if ( count( $attr[ 'procs' ] ) > $ozConfig[ 'Package' ][ $attr[ 'package_id' ] ][ 'BackgroundProcesses' ] ) {
+			$OpenZ->sendAlert( "User $user exceeded muliple procs allowed." );
+		}
+	}
+}
+exit(0);
+
+//exit(1);

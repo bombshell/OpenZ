@@ -58,7 +58,7 @@ Class Email_Core extends Framework
 	 * @return (bool) Returns the status of PHP mail() function
 	 * 
 	 */
-	public function send( $from , $fromName , $to , $subject , $message , $mime = false )
+	public function send( $from , $fromName , $to , $subject , $message , $additionalHeaders = null )
 	{
 		/* Bugfix 02/01/2011 1:50 AM : Attempting to get Hotmail to accect our mail 
 		 * This might be a problem with carriage return/new line, Hotmail SMTP Implementation */
@@ -77,6 +77,14 @@ Class Email_Core extends Framework
 		}
 		$headers .= 'X-Mailer: PHP/' . phpversion() . $line_ending;
 		$headers .= "X-Mailer: My mailer";
+		
+		/* Include additional headers */
+		if ( is_array( $additionalHeaders ) ) {
+			foreach( $additionalHeaders as $header ) {
+				$headers .= $header . $line_ending;
+			}
+		}
+		
 		$bool = mail( $to , $subject , $message , $headers );
 		return $bool;
 	}	

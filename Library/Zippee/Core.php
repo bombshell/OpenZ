@@ -18,7 +18,7 @@
 
 /** Define static default values **/
 define( 'FW_NAME'        , 'Zippee' );
-define( 'FW_VERSION'     , '0.3.0' );
+define( 'FW_VERSION'     , '0.3.8' );
 define( 'FW_COPY_STRING' , FW_NAME . ' (c) 2011 Bombshellz.net Ver. ' . FW_VERSION );
 define( 'FW_COPY_HTML'   , preg_replace( '`(\(c\))`', '&copy;' , FW_COPY_STRING ) );
 define( 'FW_PATH_CONFIG' , FW_ROOT_PATH . 'Config' . DS );

@@ -7,6 +7,12 @@ $mod_name = 'Account Management v0.0.1';
 if ( empty( $ozPermission[1][ 'Activate' ] ) ) {
 	$ozPermission[1][ 'Activate' ] = true;
 }
+if ( empty( $ozPermission[1][ 'SwitchPackage' ] ) ) {
+	$ozPermission[1][ 'SwitchPackage' ] = true;
+}
+if ( empty( $ozPermission[1][ 'Lock' ] ) ) {
+	$ozPermission[1][ 'Lock' ] = true;
+}
 if ( empty( $ozPermission[2][ 'Activate' ] ) ) {
 	$ozPermission[2][ 'Activate' ] = false;
 }
@@ -21,10 +27,9 @@ if ( empty( $ozAdminGroup[2] ) )
  * Initialize
  */
 if ( empty( $ozConfig[ 'LockReasons'] ) ) {
-	$init_failure = 'Error: No lock reasons defined';
+	$ModuleInitFailure = 'Error: No lock reasons defined';
 } else {
 	if ( $oz->getSapi() == 'cli' ) {
-		require_once $mod_base_path . 'um_class_cli.php';
 		require $mod_base_path . 'um_cli.php';
 	}
 }

@@ -226,7 +226,7 @@ $_CFG[ 'LG_Log_Name' ] = "error.log.txt"; /* string */
  note: various function depend on this setting
 
 */
-$_CFG[ 'LG_Valid_Domain_Extensions' ] = "com, net, org, gov, biz"; /* string */
+$_CFG[ 'LG_Valid_Domain_Extensions' ] = "com, net, org, gov, biz, info"; /* string */
 
 
 /* sometimes, some applications might use pear api(s). If you have pear installed, where is located? 

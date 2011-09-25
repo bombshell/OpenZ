@@ -1,13 +1,14 @@
 <?php
 
-$um = new UserManagment();
+$um = &$ozUserManagement;
+
 $menu = array();
 
 while( true ) {
 	$menu[1][ 'Name' ] = 'My Account';
-	$menu[2][ 'Name' ] = 'Client Accounts';
+	$menu[2][ 'Name' ] = 'Account Lookup';
 	
-	if ( $um->hasPriviledge( 'View.Admins' ) )
+	if ( $um->hasPriviledge( 'Manage.Admins' ) )
 		$menu[3][ 'Name' ] = 'Administrator Accounts';
 	$option = $ozConsole->showMenu( 'Account Management...' , $menu );
 		
@@ -16,35 +17,27 @@ while( true ) {
 	} else {
 		switch( $option ) {
 			case '1':
-				$ozProfile->setType( 'admin' );
-				$ozProfile->setByData( $_SESSION[ 'profile' ] );
-				$um->showProfile( true );
-				$ozConsole->pause();
+				$ozProfile->GetAccountByName( $_SESSION[ 'auth_uid' ] );
+				$ozCliInterface->DisplayAccount();
+				Console::pause();
 			break;
 			case '2':
+				$ozCliInterface->DisplayLookupForm();
+			break;
 			case '3':
-				if ( $option == '3' ) {
-					/* Reset Values */
-					$menu = array();
+				/* Reset Values */
+				$menu = array();
 					
-					$ozProfile->setType( 'admin' );
-					$menu[1][ 'Name' ] = 'Administrator Lookup';
-					if ( $um->hasPriviledge( 'Add.Admins' ) )
-						$menu[2][ 'Name' ] = 'Add Administrator';
-					$option = $ozConsole->showMenu( 'Administrator Accounts...' , $menu );
+				$ozProfile->setType( 'admin' );
+				$menu[1][ 'Name' ] = 'Add Administrator';
+				$option = $ozConsole->showMenu( 'Administrator Accounts...' , $menu );
 					
-					switch( $option ) {
-						case '1':
-							$um->showAccountLookup();
-						break;
-						case '2':
-							$um->showAdminForm(); 	
-						break;
-					}
-				} else {
-					$ozProfile->setType( 'client' );
-					$um->showAccountLookup();
+				switch( $option ) {
+					case '1':
+						$um->showAdminForm(); 	
+					break;
 				}
+				 
 			break;
 		}
 	}

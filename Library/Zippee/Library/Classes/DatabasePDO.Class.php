@@ -30,6 +30,12 @@ class Database extends Framework
 	public $dbTableName;
 	public $pdo;
 	
+	private $connOpts;
+	private $disableTestConnection;
+	private $mQCache;
+	private $mPDOStatmentCache;
+	
+	
 	/**
 	 * @method __construct
 	 * Database Class
@@ -62,6 +68,8 @@ class Database extends Framework
 			return false;
 		}
 		
+		/*** Store connection options ***/
+		$this->connOpts = $connectOptions;
 		$dbType = @$connectOptions[ 'dbType' ];
 		$dbName = @$connectOptions[ 'dbName' ];
 		$dbUser = @$connectOptions[ 'dbUser' ];
@@ -97,7 +105,7 @@ class Database extends Framework
 					$this->errorMsg = 'Error: Unable to open database connection';
 					return false;
 				}
-				$dns = "$dbType:$dbPath";
+				$dsn = "$dbType:$dbPath";
 			break;
 		}
 		
@@ -105,7 +113,7 @@ class Database extends Framework
     		$this->pdo = new PDO( $dsn , $dbUser , $dbPass , $dbOpts );
 		} catch (PDOException $e) {
 			$this->errorId = 'ERR0403';
-    		$this->errorMsg = 'Connection failed: ' . $e->getMessage();
+    		$this->errorMsg = 'Error: Connection failed: ' . $e->getMessage();
     		/* Troubleshoot database connection */
     		$this->logData( $this->errorId , $this->errorMsg , null , 'SYS' );
     		if ( $this->debug > 1 ) {
@@ -118,6 +126,76 @@ class Database extends Framework
 		/* Assume everything went ok */
 		return true;
 	}
+	
+	/*** Just Some Ideas ***/
+	public function StoreQueryInCache( $id , $sql )
+	{
+		if ( !is_object( $this->pdo ) ) {
+			$this->errorId = 'ERR0401';
+			$this->errorMsg = 'Error: Running a query on a invalid database connection';
+			return false;	
+		}
+		$this->mQCache[ $id ] = $sql;
+	}
+	
+	public function ExecuteStoredQuery( $id , $data )
+	{
+		if ( !is_object( $this->pdo ) ) {
+			$this->errorId = 'ERR0401';
+			$this->errorMsg = 'Error: Running a query on a invalid database connection';
+			return false;	
+		}
+		
+		if ( !empty( $this->mQCache[ $id ] ) ) {
+			while(1) {
+				$_pdo_statement = $this->pdo->prepare( $this->mQCache[ $id ] );
+				if ( $_pdo_statement->execute( $data ) ) {
+					$collection = $_pdo_statement->fetchAll();
+					/**while( $row = $_pdo_statement->fetchAll() ) {
+						if ( !empty( $row ) && is_array( $row ) ) {
+							$collection = $row;
+						}
+					}**/
+					//$_pdo_statement->closeCursor();
+					if ( empty( $collection ) ) {
+						//$error = $_pdo_statement->errorInfo();
+						//$this->errorId = 'ERR0401';
+						//$db_msg = ( !empty( $error[2] ) && $error[2] != 'NULL' ) ? $error[2] : 'Unknown'; 
+						//$this->errorMsg = "Db error id: {$error[0]} Db error msg: $db_msg";
+						return array();
+					}
+					return $collection;
+				} else {
+					$error = $_pdo_statement->errorInfo();
+					$this->errorId = 'ERR0401';
+					/*** Feature Replicated 02/28/2011 ***/
+					$db_msg = ( !empty( $error[2] ) && $error[2] != 'NULL' ) ? $error[2] : 'Unknown';
+					@$this->errorMsg = "Error: PDOStatement->execute(): Db error id: {$error[0]} Db error msg: {$error[2]}";
+					if ( !$this->CheckConnection( $this->errorMsg ) ) {
+						if ( !$this->ReConnect() ) {
+							return false;
+						}
+					} else {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	
+	public function BuildSelectQuery( $cols = '*' , $params = null )
+	{
+		return "SELECT $cols FROM {$this->dbTableName} $params";
+	}
+	
+	public function BuildUpdateQuery( $cols , $params = null )
+	{
+		foreach ( $cols as $col ) {
+			@$updValues .= ( empty( $updValues ) ) ? "$col = :$col" : ",$col = :$col";
+		}
+		return "UPDATE {$this->dbTableName} SET $updValues $params";
+	}
+	/**** IDEAS ***/
 	
 	/**
 	 * @method insert
@@ -201,7 +279,7 @@ class Database extends Framework
 		/* Check if we have a database connection before we continue */
 		if ( !is_object( $this->pdo ) ) {
 			$this->errorId = 'ERR0401';
-			$this->errorMsg = 'Running a query on a invalid database connection';
+			$this->errorMsg = 'Error: Running a query on a invalid database connection';
 			return false;	
 		}
 		
@@ -210,25 +288,39 @@ class Database extends Framework
 		
 		/* excute query */
 		$sql = "SELECT $cols FROM {$this->dbTableName} $params;";
-		$result_set = $this->pdo->query( $sql );
-		if ( !empty( $result_set ) ) 
-			foreach( $this->pdo->query( $sql ) as $row ) 
-				$collection[] = $row;
+		$_pdo_statement = $this->pdo->query( $sql );
+		if ( !empty( $_pdo_statement ) ) {
+			//foreach( $this->pdo->query( $sql ) as $row ) { 
+				//$collection[] = $row;
+			//}
+			/*** Bombshellz 08/27/2011 : Attempting to fix adnomarilty: Invalid argument supplied for foreach(); by finding an alternative solution ***/
+			/**while( $row = $result_set->fetch() ) {
+				if ( !empty( $row ) && is_array( $row ) ) {
+					$collection[] = $row;
+				}
+			}**/
+			$collection = $_pdo_statement->fetchAll();
+			//$_pdo_statement->closeCursor();
+		}
 			
 		if ( empty( $collection ) ) {
 			$error = $this->pdo->errorInfo();
 			$this->errorId = 'ERR0401';
-			
-			/* Feature added: 01/30/2011 4:25 PM : $error[2] can be undefined */
-			if ( empty( $error[2]) ) {
-				$db_msg = 'Unkown';
-			} else {
-				$db_msg = $error[2];
-			}
-			$this->errorMsg = "Db error id: {$error[0]} Db error msg: $db_msg";
+			$db_msg = ( !empty( $error[2] ) ) ? $error[2] : 'Unknow';
+			$this->errorMsg = "Error: Database->query($sql): Db error id: {$error[0]} Db error msg: $db_msg";
+			if ( !$this->CheckConnection( $this->errorMsg ) ) {
+				if ( !$this->ReConnect() ) {
+					return false;
+				}
+			} 
 			return false;
 		}
 		return $collection;
+	}
+	
+	public function lastRowsBy( $orderBy , $limit , $params = null )
+	{
+		return $this->query( '*' , "$params ORDER BY $orderBy asc LIMIT $limit" );
 	}
 	
 	/**
@@ -246,21 +338,41 @@ class Database extends Framework
 		/* Check if we have a database connection before we continue */
 		if ( !is_object( $this->pdo ) ) {
 			$this->errorId = 'ERR0401';
-			$this->errorMsg = 'Running a query on a invalid database connection';
+			$this->errorMsg = 'Error: Running a query on a invalid database connection';
 			return false;	
 		}
+		/*** Test Connection ***/
+		/*
+		if ( $this->disableTestConnection == false ) {
+			if ( !$this->testConnection() ) {
+				return false;
+			}
+		}*/
 		
-		$sql = $this->pdo->exec( $sql );
-		if ( $sql == false ) {
-			$error = $this->pdo->errorInfo();
-			$this->errorId = 'ERR0401';
-			
-			/*** Feature Replicated 02/28/2011 ***/
-			$db_msg = ( !empty( $error[2] ) ) ? $error[2] : 'Unknown';
-			@$this->errorMsg = "Db error id: {$error[0]} Db error msg: {$error[2]}";
+		if ( empty( $sql ) ) {
 			return false;
 		}
-		return true;
+		
+		while(1) {
+			$status = $this->pdo->exec( $sql );
+			if ( $status == false ) {
+				$error = $this->pdo->errorInfo();
+				$this->errorId = 'ERR0401';
+			
+				/*** Feature Replicated 02/28/2011 ***/
+				$db_msg = ( !empty( $error[2] ) ) ? $error[2] : 'Unknown';
+				@$this->errorMsg = "Db error id: {$error[0]} Db error msg: {$error[2]}";
+				if ( !$this->CheckConnection( $this->errorMsg ) ) {
+					if ( !$this->ReConnect() ) {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			} else {
+				return true;
+			}
+		}
 	}
 	
 	/**
@@ -302,4 +414,48 @@ class Database extends Framework
 	{
 		return $this->dbTableName;
 	}
+	
+	/**
+	 * 
+	 * Checks if connection is alive
+	 * @return TRUE if the connection is alive, FALSE if not
+	 * 
+	 */
+	private function testConnection()
+	{
+		/*** Random SQL Statement ***/
+		$sql = 'SELECT * FROM test';
+		$this->disableTestConnection = true;
+		$this->exec( $sql );
+		if ( preg_match( '/(MySQL server has gone away)$/' , $this->errorMsg ) ) {
+			/*** Destroy connection and create a new one ***/
+			$this->pdo = null;
+			if ( !$this->__construct( $this->connOpts ) ) {
+				return false;
+			}
+		}
+		$this->disableTestConnection = false;
+		$this->errorId = null;
+		$this->errorMsg = null;
+		return true;
+	}
+	
+	private function CheckConnection( $str )
+	{
+		if ( preg_match( '/(MySQL server has gone away)$/' , $this->errorMsg ) ) {
+			return false;	
+		}
+		return true;
+	}
+	
+	public function ReConnect()
+	{
+		/*** Destroy connection and create a new one ***/
+		$this->pdo = null;
+		if ( !$this->__construct( $this->connOpts ) ) {
+			return false;
+		}
+		return true;	
+	}
+	
 }

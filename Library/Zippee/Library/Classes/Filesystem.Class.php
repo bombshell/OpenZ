@@ -36,22 +36,23 @@ class Filesystem
 	 * @return (array) Returns directory contents in array or False on error
 	 * 
 	 */
-	public function dirRead( $dir )
+	public function dirRead( $dir , $returnFullPath = false )
 	{
 		/* Check if directory exists */
 		/* Open directory handle */
 		/* Build directory array */
+		/*** Default Vars ***/
+		$array = array();		
 		/*** Series of Checks ***/
-		if ( file_exists( $dir ) ) {
-			if ( !is_dir( $dir ) ) {
-				$this->errorId = 'ERRx0116';
-				$this->errorMsg = "Error: is not a directory: '$dir'";
-				return false;
-			}
-		} else {
-			$this->errorId = 'ERR0108';
-			$this->errorMsg = "Error: Directory not found '$dir'";
+		if ( !is_dir( $dir ) ) {
+			$this->errorId = 'ERRx0116';
+			$this->errorMsg = "Error: is not a directory: '$dir'";
 			return false;
+		} 
+		
+		/*** Feature added 08/21/2011 : Check for ending slash ***/
+		if ( !preg_match( '/(\\\|\/)$/' , $dir ) ) {
+			$dir .= DS;
 		}
 		
 		if ( @is_resource( $this->storage[ 'dirHandles' ][ $dir ][ 'handle' ] ) ) 
@@ -66,7 +67,12 @@ class Filesystem
 		
 		while( false !== ($file = readdir( $h ) ) ) {
 			if ( $file != '.' && $file != '..' ) {
-				$array[] = $file;
+				if ( $returnFullPath ) {
+					/*** Feature added 08/21/2011 : Add feature to return full path ***/
+					$array[] = $dir . $file;
+				} else {
+					$array[] = $file;
+				}
 			}
 		}
 		return $array;

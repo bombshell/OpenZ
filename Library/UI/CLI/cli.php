@@ -1,7 +1,11 @@
 #!/usr/local/bin/php
 <?php
 
-require dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '../../../main.php';
+require dirname( __FILE__ ) . DIRECTORY_SEPARATOR . '../../../OpenZ.php';
+
+if ( $_SERVER[ 'USER' ] != 'root' ) {
+	oz_quit( OZ_ERROR . OZ_NAME . ' needs to be run as root' );
+}
 
 function banner()
 {
@@ -13,83 +17,92 @@ function banner()
 	print "\n";
 }
 
-banner();
-print "This system is currently being tested\n";
-print "Type q to exit at anytime\n";
-while(true) {
-	$username = Console::showInput( 'Please enter your OpenZ Administrator *Username*' );
-	$ozConsole->shouldQuit( $username );
-	shell_exec( 'stty -echo' );
-	$password = Console::showInput( "\n" . 'Please enter your OpenZ Administrator *Password*' );
-	shell_exec( 'stty echo' );
+function login()
+{
+	/*** Global Variables ***/
+	global $ozConsole, $ozSession, $ozProfile, $OpenZ;
 	
-	if ( $ozSession->auth( $username , $password , 'admin' ) ) {
-		break;
-	} else {
-		print "\n\n" . OZ_ERROR . "Credentials Provided are invalid: Try again\n\n";
+	banner();
+	pf( 'This system is currently being tested' );
+	pf( 'Type q to exit at anytime' );
+	while(true) {
+		$username = Console::showInput( 'Please enter your OpenZ Administrator *Username*' );
+		$ozConsole->shouldQuit( $username );
+		shell_exec( 'stty -echo' );
+		$password = Console::showInput( "\nPlease enter your OpenZ Administrator *Password*" );
+		shell_exec( 'stty echo' );
+	
+		if ( $ozSession->auth( $username , $password , 'admin' ) ) {
+			break;
+		} else {
+			pf( "\n\n" . OZ_ERROR . "Credentials Provided are invalid: Try again\n\n" );
+		}
+	} 
+	
+	/***
+ 	 * Check if THIS user requires a password reset
+     */
+	if ( $ozProfile->GetField( 'oz_pwd_requires_reset' ) == '1' ) {
+		pf("\n\n" . 'A password reset is required!');
+		$password = Console::showPasswordForm();
+		pf("\n" . 'Updating Database...');
+		$data[ 'oz_pwd' ] = $OpenZ->hash( $password );
+		$data[ 'oz_pwd_requires_reset' ] = '0';
+		$ozProfile->update( $data );
+		pf('Done');
+		sleep(2);
 	}
-} 
+}
 
 /***
- * Check if THIS user requires a password reset
+ * Auth User
  */
-if ( $_SESSION[ 'profile' ][ 'oz_pwd_requires_reset' ] == '1' ) {
-	pf("\n" . 'A password reset is required!');
-	$password = Console::showPasswordForm();
-	
-	pf("\n" . 'Updating Database...');
-	$ozProfile->setType( 'admin' );
-	$ozProfile->getByName( $_SESSION[ 'profile' ][ 'oz_uid' ] );
-	$data[ 'oz_pwd' ] = $oz->hash( $password );
-	$data[ 'oz_pwd_requires_reset' ] = '0';
-	$ozProfile->update($data);
-	pf('DOne');
-	sleep(2);
-}
+login();
 
 /***
  * Build Menu
  */
 $zppZDatabase->setTableName( 'oz_modules_info' );
 $i = 1;
-if ( $menus = $zppZDatabase->query() ) {
+if ( $modules = Module::getAll() ) {
 	while ( true ) {
-		Console::showTitle( 'Menu...' );
-	
-		foreach( $menus as $menu ) {
-			//var_dump( $menus );
-			//var_dump( $menu  );
-			if ( !empty( $menu[ 'oz_modname' ] ) ) {
-				pf( "   " . $i . ". {$menu[ 'oz_modname' ]}" );
-				$item[ $i ] = $menu;
+		$menu = null;
+		$file = null;
+		foreach( $modules as $module ) {
+			if ( !empty( $module[ 'oz_modname' ] ) ) {
+				$menu[$i][ 'Name' ] = $module[ 'oz_modname' ];
+				$menu[$i][ 'Version' ] = $module[ 'oz_modver' ];
+				$file[$i] = $module[ 'oz_modfile' ];
 				$i++;
 			}	
 		}
 		$i = 1;
-		pf( '   q to quit' );
 		
-		pf('');
-		pf( "Welcome " . $_SESSION['profile' ][ 'oz_uid' ] );
-		
-		$option = Console::showOptionInput();
+		/*** Show Menu ***/
+		$option = Console::showMenu( "Welcome {$_SESSION[ 'auth_uid' ]}..." , $menu , false );
 		$ozConsole->shouldQuit( $option );
-		if ( @$item[ $option ] ) {
-			Console::clear();
-			require OZ_PATH_LIBRARY . path_rewrite( 'Modules/' . $item[ $option ][ 'oz_modfile' ] );
-			if ( !empty( $init_failure ) ) {
-				pf("Error: Failed to load module {$item[$option]['oz_modname']} {$item[$option]['oz_modver']}: $init_failure");
-				$ozConsole->pause();
-			}
+		
+		/*** Load Option ***/
+		Console::clear();
+		$file = OZ_PATH_LIBRARY . path_rewrite( 'Modules/' . $file[ $option ] );
+		if ( is_file( $file ) ) {
+			require $file;
 		} else {
-			print "Error: Invalid Option\n";
-			Console::pause();
+			$ModuleInitFailure = 'Module Not found';
 		}
+		
+		/*** Show Any failure Message ***/
+		if ( !empty( $ModuleInitFailure ) ) {
+			pf( "Error: Failed to load module {$menu[$option][ 'Name' ]} {$menu[$option][ 'Version' ]}: $ModuleInitFailure" );
+			Console::pause();
+			$ModuleInitFailure = null;
+		}
+		 
 	}	
 } else {
-	print "No Modules Available\n";
+	pf( 'No Modules Available' );
+	pf( 'Goodbye...' );
 }
-
-print "Goodbye ...";
 
 
 

@@ -75,4 +75,45 @@ class Framework extends Core
 		fclose( $handle );
 		exit(1);
 	}
+	
+	public function getCmdArgs()
+	{
+		global $argv, $argc;
+		$params = array();
+		$attr   = array();
+		
+		/* Process command line arguements */
+        foreach( $argv as $arg_index => $arg ) {
+                if ( preg_match( '/^-/' , $arg ) ) {
+                        if ( !preg_match( '/^(--)/' , $arg ) && strlen( $arg ) > 2 ) {
+                                $arr = str_split( $arg );
+                                foreach( $arr as $arr_index => $param ) {
+                                        if ( $param != '-' ) {
+                                        		$param = "-$param";
+                                                if ( !preg_match( '/^-/' , @$argv[ $arg_index + 1 ] ) && empty( $arr[ $arr_index + 1 ] ) ) {
+                                                		if ( !empty(  $argv[ $arg_index + 1 ] ) ) {
+                                                        	$params[ $param ] = $argv[ $arg_index + 1 ];
+                                                		} else {
+                                                			$params[ $param ] = '';
+                                                		}
+                                                        unset( $argv[ $arg_index + 1 ] );
+                                                } else {
+                                                        $params[ $param ] = '';
+                                                }
+                                        }
+                                }
+                        } else {
+                                if ( !preg_match( '/^-/' , @$argv[ $arg_index + 1 ] ) && !empty( $argv[ $arg_index + 1 ] ) ) {
+                                        $params[ $arg ] = $argv[ $arg_index + 1 ];
+                                } else {
+                                        $params[ $arg ] = '';
+                                }
+                        }
+                } else {
+                        $attr[] = $arg;
+                }
+        }
+
+		return array( 'params' => $params , 'attr' => $attr );
+	}
 }

@@ -47,8 +47,9 @@ class Session_Core extends Framework
 				$this->errorId = 'ERRO501';
 				$this->errorMsg = "Error: Session config path is invalid: $config_path";
 			}
-			if ( $this->errorId )
+			if ( $this->errorId ) {
 				$this->throwError();
+			}
 		}
 		require $config_path;
 		

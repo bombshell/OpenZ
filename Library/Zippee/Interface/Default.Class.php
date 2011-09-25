@@ -170,7 +170,6 @@ class Core
 			$search[] = $key;
 			$replace[] = $value;
 		}
-		
 		return str_replace( $search , $replace , $replaceStr );
 	}
 	
@@ -329,8 +328,14 @@ class Core
 		}
 		
 		/* Retrieve handle */
-		$handle = @$this->storage[ 'fila_handler' ][ $file ][ 'handle' ];
-		if ( is_resource( $handle ) ) {
+		if ( !empty( $this->storage[ 'fila_handler' ][ $file ][ 'handle' ] ) ) {
+			if ( !is_file( $file ) ) {
+				unset( $this->storage[ 'fila_handler' ][ $file ][ 'handle' ] );
+			} else {
+				$handle = @$this->storage[ 'fila_handler' ][ $file ][ 'handle' ];
+			}
+		}
+		if ( is_resource( @$handle ) ) {
 			$h = $handle;
 		} elseif ( !$h = @fopen( $file , $writeMode ) ) {
 			$this->errorId = 'ERR0105';
@@ -349,7 +354,7 @@ class Core
 		if ( empty( $data ) ) {
 			$filename = $file;
 		}
-		
+	
 		if ( @fwrite( $h , $data ) ) {
 			/* Feature added: 01/18/2011 */
 			/*** Feature modified 03/02/2011 3:29 PM : See BUG FIX below ***/
@@ -431,7 +436,7 @@ class Core
 					}
 			
 					if ( !$temp_is_writeable ) {
-						$this->printError( 'ERR0107' , 'Temp directory is not writeable' );
+						$this->printError( 'ERR0107' , 'Error: Temp directory is not writeable: ' . $temp_dir );
 						exit;
 					}
 				}
@@ -620,6 +625,48 @@ class Core
         	$randstr .= chr($n);
     	}
     	return $randstr;
+	}
+	
+	/**
+	 * 
+	 * Remove empty values from Array
+	 * @access Public
+	 * @param (array) $arr
+	 * @return (array)
+	 * 
+	 */
+	public function removeEmptyArrs( $arr )
+	{
+		if ( !is_array( $arr ) ) {
+			return false;
+		}
+		foreach( $arr as $value ) {
+			if ( $value != "" && $value != " " ) {
+				$return[] = $value;
+			}
+		}
+		if ( !empty( $return ) ) {
+			return $return;	
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * 
+	 * Converts an Array to string
+	 * @access Public
+	 * @param $array
+	 * @param $offset Convert array to strint from offset
+	 * 
+	 */
+	public function arrayToString( $array , $offset = null )
+	{
+		if ( $offset != null ) {
+			$array = array_slice( $array , $offset );
+		}
+		$return = implode( " " , $array );
+		return $return;
 	}
 	
 	public function setDebug( $debug )
